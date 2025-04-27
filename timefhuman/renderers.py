@@ -219,15 +219,23 @@ class tfhDatetime(tfhDatelike):
         tzinfo = self.tz or config.now.tzinfo
         
         if self.date and self.time:
-            return datetime.combine(_date, _time, tzinfo=tzinfo)
+            res = datetime.combine(_date, _time)
+            if tzinfo:
+                res = tzinfo.localize(res)
+            return res
         elif self.date:
             if config.infer_datetimes:
-                return datetime.combine(_date, time(0, 0), tzinfo=tzinfo)
+                res = datetime.combine(_date, time(0, 0))
+                if tzinfo:
+                    res = tzinfo.localize(res)
+                return res
             return _date  # NOTE: a date object cannot hold a timezone
         elif self.time:
             if config.infer_datetimes:
                 _now = config.now.replace(tzinfo=tzinfo)
-                candidate = datetime.combine(_now.date(), _time, tzinfo=tzinfo)
+                candidate = datetime.combine(_now.date(), _time)
+                if tzinfo:
+                    candidate = tzinfo.localize(candidate)
                 if candidate < _now and config.direction == Direction.next:
                     candidate += timedelta(days=1)
                 elif candidate > _now and config.direction == Direction.previous:
